@@ -20,36 +20,14 @@
  *
  */
 #pragma once
-//#pragma message("My configuration.h file was used!") ;
-
- // If you have a trex 3, stock is this option plus 2208 on all axis. None in spreadcycle.
-#define TREX3
-
-// If you have a trex 3 that was upgraded from a 2+ with the kit, modifies home position and offsets.
-#define TREX3_UPGRADE
 
 #define BedAC
 
 //#define ABL_Bilinear
 
-#if ENABLED(TREX3_UPGRADE)
-  #define TREX3
-#endif
 
-#if ENABLED(TREX3)
-  #if DISABLED(X_S109)
-    #define X_2209
-  #endif
-  #if DISABLED(Y_S109)
-    #define Y_2209
-  #endif
-  #define Z_2209
-  #define E_2209
-  #define FilamentSensor
-#endif
-#if ENABLED(lerdgeFilSensor) && DISABLED(FilamentSensor)
-  #define FilamentSensor
-#endif
+#define FilamentSensor
+
 
 /**
  * Configuration.h
@@ -723,59 +701,15 @@
  *          TMC5130, TMC5130_STANDALONE, TMC5160, TMC5160_STANDALONE
  * :['A4988', 'A5984', 'DRV8825', 'LV8729', 'L6470', 'L6474', 'POWERSTEP01', 'TB6560', 'TB6600', 'TMC2100', 'TMC2130', 'TMC2130_STANDALONE', 'TMC2160', 'TMC2160_STANDALONE', 'TMC2208', 'TMC2208_STANDALONE', 'TMC2209', 'TMC2209_STANDALONE', 'TMC26X', 'TMC26X_STANDALONE', 'TMC2660', 'TMC2660_STANDALONE', 'TMC5130', 'TMC5130_STANDALONE', 'TMC5160', 'TMC5160_STANDALONE']
  */
-#if ENABLED(X_2209)
+
   #define X_DRIVER_TYPE  TMC2209_STANDALONE
   #define X2_DRIVER_TYPE TMC2209_STANDALONE
-#elif ENABLED(X_2208)
-  #define X_DRIVER_TYPE  TMC2208_STANDALONE
-  #define X2_DRIVER_TYPE TMC2208_STANDALONE
-#else
-  #define X_DRIVER_TYPE  A4988
-  #define X2_DRIVER_TYPE A4988
-#endif
-//#define X_DRIVER_TYPE  A4988
-//#define Y_DRIVER_TYPE  A4988
-//#define Z_DRIVER_TYPE  A4988
-#if ENABLED(Y_2209)
   #define Y_DRIVER_TYPE  TMC2209_STANDALONE
-#elif ENABLED(Y_2208)
-  #define Y_DRIVER_TYPE  TMC2208_STANDALONE
-#elif ENABLED(Y_4988)
-  #define Y_DRIVER_TYPE  A4988
-#else
-  #define Y_DRIVER_TYPE  DRV8825
-#endif
-#if ENABLED(Z_2209)
   #define Z_DRIVER_TYPE  TMC2209_STANDALONE
-#elif ENABLED(Z_2208)
-  #define Z_DRIVER_TYPE  TMC2208_STANDALONE
-#elif ENABLED(Z_4988)
-  #define Z_DRIVER_TYPE A4988
-#else
-  #define Z_DRIVER_TYPE  DRV8825
-#endif
    
-//#define X2_DRIVER_TYPE A4988
-//#define Y2_DRIVER_TYPE A4988
-//#define Z2_DRIVER_TYPE A4988
-//#define Z3_DRIVER_TYPE A4988
-//#define Z4_DRIVER_TYPE A4988
-#if ENABLED(E_2209)
   #define E0_DRIVER_TYPE TMC2209_STANDALONE
   #define E1_DRIVER_TYPE TMC2209_STANDALONE
-#elif ENABLED(E_2208)
-  #define E0_DRIVER_TYPE  TMC2208_STANDALONE
-  #define E1_DRIVER_TYPE TMC2208_STANDALONE
-#else
-  #define E0_DRIVER_TYPE DRV8825
-  #define E1_DRIVER_TYPE DRV8825
-#endif
-//#define E2_DRIVER_TYPE A4988
-//#define E3_DRIVER_TYPE A4988
-//#define E4_DRIVER_TYPE A4988
-//#define E5_DRIVER_TYPE A4988
-//#define E6_DRIVER_TYPE A4988
-//#define E7_DRIVER_TYPE A4988
+
 
 // Enable this feature if all enabled endstop pins are interrupt-capable.
 // This will remove the need to poll the interrupt pins, saving many CPU cycles.
