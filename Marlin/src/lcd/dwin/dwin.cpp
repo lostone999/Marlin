@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
 
@@ -47,11 +47,15 @@
 #include "../../feature/powerloss.h"
 #include "../../feature/babystep.h"
 
-#include "../../module/configuration_store.h"
+#include "../../module/settings.h"
 #include "../../module/temperature.h"
 #include "../../module/printcounter.h"
 #include "../../module/motion.h"
 #include "../../module/planner.h"
+
+#if ENABLED(HOST_ACTION_COMMANDS)
+  #include "../../feature/host_actions.h"
+#endif
 
 #if HAS_LEVELING
   #include "../../feature/bedlevel/bedlevel.h"
@@ -124,7 +128,7 @@ constexpr uint16_t TROWS = 6, MROWS = TROWS - 1,        // Total rows, and other
 
 #define MBASE(L) (49 + (L)*MLINE)
 
-#define BABY_Z_VAR TERN(HAS_LEVELING, probe.offset.z, zprobe_zoffset)
+#define BABY_Z_VAR TERN(HAS_BED_PROBE, probe.offset.z, zprobe_zoffset)
 
 /* Value Init */
 HMI_value_t HMI_ValueStruct;
@@ -185,10 +189,11 @@ int temphot = 0, tempbed = 0;
 float zprobe_zoffset = 0;
 float last_zoffset = 0, last_probe_zoffset = 0;
 
-#define FONT_EEPROM_OFFSET 0
+#define DWIN_LANGUAGE_EEPROM_ADDRESS 0x01   // Between 0x01 and 0x63 (EEPROM_OFFSET-1)
+                                            // BL24CXX::check() uses 0x00
 
 void lcd_select_language(void) {
-  BL24CXX::read(FONT_EEPROM_OFFSET, (uint8_t*)&HMI_flag.language_flag, sizeof(HMI_flag.language_flag));
+  BL24CXX::read(DWIN_LANGUAGE_EEPROM_ADDRESS, (uint8_t*)&HMI_flag.language_flag, sizeof(HMI_flag.language_flag));
   if (HMI_flag.language_flag)
     DWIN_JPG_CacheTo1(Language_Chinese);
   else
@@ -198,12 +203,12 @@ void lcd_select_language(void) {
 void set_english_to_eeprom(void) {
   HMI_flag.language_flag = 0;
   DWIN_JPG_CacheTo1(Language_English);
-  BL24CXX::write(FONT_EEPROM_OFFSET, (uint8_t*)&HMI_flag.language_flag, sizeof(HMI_flag.language_flag));
+  BL24CXX::write(DWIN_LANGUAGE_EEPROM_ADDRESS, (uint8_t*)&HMI_flag.language_flag, sizeof(HMI_flag.language_flag));
 }
 void set_chinese_to_eeprom(void) {
   HMI_flag.language_flag = 1;
   DWIN_JPG_CacheTo1(Language_Chinese);
-  BL24CXX::write(FONT_EEPROM_OFFSET, (uint8_t*)&HMI_flag.language_flag, sizeof(HMI_flag.language_flag));
+  BL24CXX::write(DWIN_LANGUAGE_EEPROM_ADDRESS, (uint8_t*)&HMI_flag.language_flag, sizeof(HMI_flag.language_flag));
 }
 
 void show_plus_or_minus(uint8_t size, uint16_t bColor, uint8_t iNum, uint8_t fNum, uint16_t x, uint16_t y, long value) {
@@ -375,6 +380,10 @@ inline void Clear_Title_Bar(void) {
 }
 
 inline void Draw_Title(const char * const title) {
+  DWIN_Draw_String(false, false, HEADER_FONT, White, Background_blue, 14, 4, (char*)title);
+}
+
+inline void Draw_Title(const __FlashStringHelper * title) {
   DWIN_Draw_String(false, false, HEADER_FONT, White, Background_blue, 14, 4, (char*)title);
 }
 
@@ -567,7 +576,7 @@ inline void Draw_Prepare_Menu() {
   }
   else {
     #ifdef USE_STRING_HEADINGS
-      Draw_Title("Prepare"); // TODO: GET_TEXT_F
+      Draw_Title(GET_TEXT_F(MSG_PREPARE));
     #else
       DWIN_Frame_AreaCopy(1, 178, 2, 271 - 42, 479 - 464 - 1, 14, 8); // "Prepare"
     #endif
@@ -610,7 +619,7 @@ inline void Draw_Control_Menu() {
   }
   else {
     #ifdef USE_STRING_HEADINGS
-      Draw_Title("Control"); // TODO: GET_TEXT_F
+      Draw_Title(GET_TEXT_F(MSG_CONTROL));
     #else
       DWIN_Frame_AreaCopy(1, 128, 2, 271 - 95, 479 - 467, 14, 8);
     #endif
@@ -655,7 +664,7 @@ inline void Draw_Tune_Menu() {
   }
   else {
     #ifdef USE_STRING_HEADINGS
-      Draw_Title("Tune"); // TODO: GET_TEXT
+      Draw_Title(GET_TEXT_F(MSG_TUNE));
     #else
       DWIN_Frame_AreaCopy(1, 94, 2, 271 - 145, 479 - 467, 14, 9);
     #endif
@@ -729,7 +738,7 @@ inline void Draw_Motion_Menu() {
   }
   else {
     #ifdef USE_STRING_HEADINGS
-      Draw_Title("Motion"); // TODO: GET_TEXT_F
+      Draw_Title(GET_TEXT_F(MSG_MOTION));
     #else
       DWIN_Frame_AreaCopy(1, 144, 16, 271 - 82, 479 - 453, 14, 8);
     #endif
@@ -946,7 +955,7 @@ void Goto_MainMenu(void) {
   }
   else {
     #ifdef USE_STRING_HEADINGS
-      Draw_Title("Home"); // TODO: GET_TEXT
+      Draw_Title(GET_TEXT_F(MSG_MAIN));
     #else
       DWIN_Frame_AreaCopy(1, 0, 2, 271 - 232, 479 - 467, 14, 9);
     #endif
@@ -1111,11 +1120,11 @@ void HMI_Zoffset(void) {
 
       if (HMI_ValueStruct.show_mode == -4) {
         checkkey = Prepare;
-        show_plus_or_minus(font8x16, Background_black, 2, 2, 202, MBASE(4 + MROWS - index_prepare), TERN(HAS_LEVELING, probe.offset.z * 100, HMI_ValueStruct.offset_value));
+        show_plus_or_minus(font8x16, Background_black, 2, 2, 202, MBASE(4 + MROWS - index_prepare), TERN(HAS_BED_PROBE, probe.offset.z * 100, HMI_ValueStruct.offset_value));
       }
       else {
         checkkey = Tune;
-        show_plus_or_minus(font8x16, Background_black, 2, 2, 202, MBASE(5 + MROWS - index_tune), TERN(HAS_LEVELING, probe.offset.z * 100, HMI_ValueStruct.offset_value));
+        show_plus_or_minus(font8x16, Background_black, 2, 2, 202, MBASE(5 + MROWS - index_tune), TERN(HAS_BED_PROBE, probe.offset.z * 100, HMI_ValueStruct.offset_value));
       }
       DWIN_UpdateLCD();
       return;
@@ -1479,7 +1488,7 @@ void update_variable(void) {
     DWIN_Draw_IntValue(true, true, 0, STAT_FONT, White, Background_black, 3, 33 + 2 * STAT_CHR_W, 429, feedrate_percentage);
     last_speed = feedrate_percentage;
   }
-  #if HAS_LEVELING
+  #if HAS_BED_PROBE
     if (last_probe_zoffset != probe.offset.z) {
       show_plus_or_minus(STAT_FONT, Background_black, 2, 2, 178 + STAT_CHR_W, 429, probe.offset.z * 100);
       last_probe_zoffset = probe.offset.z;
@@ -1713,7 +1722,7 @@ inline void Draw_Info_Menu() {
   }
   else {
     #ifdef USE_STRING_HEADINGS
-      Draw_Title("Info"); // TODO: GET_TEXT_F
+      Draw_Title(GET_TEXT_F(MSG_INFO_SCREEN));
     #else
       DWIN_Frame_AreaCopy(1, 190, 16, 271 - 56, 479 - 453, 14, 8);
     #endif
@@ -2063,9 +2072,9 @@ void HMI_PauseOrStop(void) {
           #ifdef ACTION_ON_CANCEL
             host_action_cancel();
           #endif
-          #ifdef EVENT_GCODE_SD_STOP
+          #ifdef EVENT_GCODE_SD_ABORT
             Popup_Window_Home();
-            queue.inject_P(PSTR(EVENT_GCODE_SD_STOP)); // For Ender 3 "G28 X Y"
+            queue.inject_P(PSTR(EVENT_GCODE_SD_ABORT));
           #endif
           abort_flag = true;
         #endif
@@ -2090,7 +2099,7 @@ inline void Draw_Move_Menu() {
   }
   else {
     #ifdef USE_STRING_HEADINGS
-      Draw_Title("Move"); // TODO: GET_TEXT_F
+      Draw_Title(GET_TEXT_F(MSG_MOVE_AXIS));
     #else
       DWIN_Frame_AreaCopy(1, 231, 2, 271 - 6, 479 - 467, 14, 8);
     #endif
@@ -2183,7 +2192,7 @@ void HMI_Prepare(void) {
         Popup_Window_Home();
         break;
       case 4: // Z-offset
-        #if HAS_LEVELING
+        #if HAS_BED_PROBE
           checkkey = Homeoffset;
           HMI_ValueStruct.show_mode    = -4;
           HMI_ValueStruct.offset_value = probe.offset.z * 100;
@@ -2244,7 +2253,7 @@ void Draw_Temperature_Menu() {
   }
   else {
     #ifdef USE_STRING_HEADINGS
-      Draw_Title("Temperature"); // TODO: GET_TEXT_F
+      Draw_Title(GET_TEXT_F(MSG_TEMPERATURE));
     #else
       DWIN_Frame_AreaCopy(1, 56, 16, 271 - 130, 479 - 450 - 1, 14, 8);
     #endif
@@ -2374,7 +2383,7 @@ void HMI_Control(void) {
 void HMI_Leveling(void) {
   Popup_Window_Leveling();
   DWIN_UpdateLCD();
-  queue.inject_P(PSTR("G29"));
+  queue.inject_P(PSTR("G28O\nG29"));
 }
 
 /* Axis Move */
@@ -3385,7 +3394,7 @@ void EachMomentUpdate(void) {
   else if (abort_flag && !HMI_flag.home_flag) { // Print Stop
     abort_flag = 0;
     HMI_ValueStruct.print_speed = feedrate_percentage = 100;
-    zprobe_zoffset = TERN(HAS_LEVELING, probe.offset.z, 0);
+    zprobe_zoffset = TERN(HAS_BED_PROBE, probe.offset.z, 0);
 
     planner.finish_and_disable();
 
