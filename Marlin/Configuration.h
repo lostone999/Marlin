@@ -494,9 +494,9 @@
 #define PID_K1 0.95      // Smoothing factor within any PID loop
 
 #if ENABLED(PIDTEMP)
-  #define PID_EDIT_MENU           // Add PID editing to the "Advanced Settings" menu. (~700 bytes of PROGMEM)
-  #define PID_AUTOTUNE_MENU       // Add PID auto-tuning to the "Advanced Settings" menu. (~250 bytes of PROGMEM)
-  //#define PID_PARAMS_PER_HOTEND // Uses separate PID parameters for each extruder (useful for mismatched extruders)
+//  #define PID_EDIT_MENU           // Add PID editing to the "Advanced Settings" menu. (~700 bytes of PROGMEM)
+//  #define PID_AUTOTUNE_MENU       // Add PID auto-tuning to the "Advanced Settings" menu. (~250 bytes of PROGMEM)
+  #define PID_PARAMS_PER_HOTEND // Uses separate PID parameters for each extruder (useful for mismatched extruders)
                                   // Set/get with gcode: M301 E[extruder number, 0-2]
 
   // If you are using a pre-configured hotend then you can use one of the value sets by uncommenting it
@@ -513,11 +513,17 @@
 //    #define DEFAULT_Kd 53.36
 
 //autotune on E0 20200619
-    #define DEFAULT_Kp 15.65
-    #define DEFAULT_Ki 1.02
-    #define DEFAULT_Kd 60.25
+   // #define DEFAULT_Kp 15.65
+   // #define DEFAULT_Ki 1.02
+   // #define DEFAULT_Kd 60.25
 
-  //  M301 P15.65 I1.02 D60.25 C100.00
+
+//M301 E0 P15.65 I1.02 D60.25 C100.00
+//M301 E1 I2.50 P31.89 D101.87 C100.0 
+#define DEFAULT_Kp 15.65f, 31.89f
+#define DEFAULT_Ki 1.02f, 2.5f
+#define DEFAULT_Kd 60.25f, 101.87f
+
 
   // MakerGear
   //#define DEFAULT_Kp 7.0
