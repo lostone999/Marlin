@@ -327,7 +327,7 @@
 // For the other hotends it is their distance from the extruder 0 hotend.
 #define HOTEND_OFFSET_X { 0.0, 438.5} // (mm) relative X-offset for each nozzle
 //#define HOTEND_OFFSET_Y { 0.0, 5.00 }  // (mm) relative Y-offset for each nozzle
-#define HOTEND_OFFSET_Z { 0.0, -0.1 }  // (mm) relative Z-offset for each nozzle
+#define HOTEND_OFFSET_Z { 0.0, -8.45}  // (mm) relative Z-offset for each nozzle
 
 // @section machine
 
@@ -502,8 +502,8 @@
     // Specify between 1 and HOTENDS values per array.
     // If fewer than EXTRUDER values are provided, the last element will be repeated.
     #define DEFAULT_Kp_LIST {  15.65,  31.89 }
-    #define DEFAULT_Ki_LIST {   1.02,   2.5 }
-    #define DEFAULT_Kd_LIST { 60.25, 101.87 }
+    #define DEFAULT_Ki_LIST {   1.02,   2.5  }
+    #define DEFAULT_Kd_LIST {  60.25, 101.87 }
 
   #else
     #define DEFAULT_Kp  22.20
